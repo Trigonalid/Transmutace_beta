@@ -12,171 +12,137 @@ library(readxl)
 library(writexl)
 library(openxlsx)
 
+# loading data and prepare data -all parasitoids and caterpillars without singletons and doubletons
+main_table <- readxl::read_excel("data/input/Beta_August22.xlsx")
+main_table <- dplyr::rename(main_table, par_morph = NEW_M_code, cat_morph = cat_whole_name, plant_sp = sample_code)
 
-
-#loading data and prepare data -all parasitoids and caterpillars without singletons and doubletons
-main_table <- read_excel("data/input/Beta_August22.xlsx")
-main_table <- rename (main_table, par_morph = NEW_M_code, cat_morph = cat_whole_name, plant_sp = sample_code) 
-
-#Main dataset - reduced
-testik <- main_table %>% 
-  filter(Par_remove == "0", Remove_cats == "0", singlecat == "0", singlepara == "0") %>% 
-  select(LOC2, par_morph, cat_morph, plant_sp)
+# Main dataset - reduced
+testik <- main_table %>%
+  dplyr::filter(Par_remove == "0", Remove_cats == "0", singlecat == "0", singlepara == "0") %>%
+  dplyr::select(LOC2, par_morph, cat_morph, plant_sp)
 
 # distance matrix
-Distance <- 
+Distance <-
   read.csv2(
-    here::here("data/input/Distance.csv"), row.names=1)
-
+    here::here("data/input/Distance.csv"),
+    row.names = 1
+  )
 
 #######   Food-web interactions between caterpillars and parasitoids
 
-#Preparing contingency table - caterpillars vs parasitoids
+# Preparing contingency table - caterpillars vs parasitoids
 
-Elem_PC <- testik %>% 
-  filter(LOC2 =="Elem") %>%
-  select(cat_morph, par_morph)
-Elem_PC <- as.matrix(table(Elem_PC$cat_morph, Elem_PC$par_morph))
+count_indiv <- function(data_source,
+                        sel_locality) {
+  data_filter <-
+    data_source %>%
+    dplyr::filter(LOC2 == sel_locality) %>%
+    dplyr::select(cat_morph, par_morph)
 
-Morox_PC <- testik %>% 
-  filter(LOC2 =="Morox") %>%
-  select(cat_morph, par_morph)
-Morox_PC <- as.matrix(table(Morox_PC$cat_morph, Morox_PC$par_morph))
+  result <- as.matrix(table(data_filter$cat_morph, data_filter$par_morph))
 
-Niksek_PC <- testik %>% 
-  filter(LOC2 =="Niksek") %>%
-  select(cat_morph, par_morph)
-Niksek_PC <- as.matrix(table(Niksek_PC$cat_morph, Niksek_PC$par_morph))
+  return(result)
+}
 
-Ohu1_PC <- testik %>% 
-  filter(LOC2 =="Ohu1") %>%
-  select(cat_morph, par_morph)
-Ohu1_PC <- as.matrix(table(Ohu1_PC$cat_morph, Ohu1_PC$par_morph))
+count_indiv(
+  data_source = testik,
+  sel_locality = "Elem"
+)
 
-Ohu2_PC <- testik %>% 
-  filter(LOC2 =="Ohu2") %>%
-  select(cat_morph, par_morph)
-Ohu2_PC <- as.matrix(table(Ohu2_PC$cat_morph, Ohu2_PC$par_morph))
+loc_list <-
+  testik$LOC2 %>%
+  unique() %>%
+  rlang::set_names() %>%
+  purrr::map(
+    .x = .,
+    .f = ~ count_indiv(
+      data_source = testik,
+      sel_locality = .x
+    )
+  )
 
-Utai_PC <- testik %>% 
-  filter(LOC2 =="Utai") %>%
-  select(cat_morph, par_morph)
-Utai_PC <- as.matrix(table(Utai_PC$cat_morph, Utai_PC$par_morph))
+str(loc_list, 2)
+loc_list["Elem"]
 
-Wamangu_PC <- testik %>% 
-  filter(LOC2 =="Wamangu") %>%
-  select(cat_morph, par_morph)
-Wamangu_PC <- as.matrix(table(Wamangu_PC$cat_morph, Wamangu_PC$par_morph))
-
-Wanang_PC <- testik %>% 
-  filter(LOC2 =="Wanang") %>%
-  select(cat_morph, par_morph)
-Wanang_PC <- as.matrix(table(Wanang_PC$cat_morph, Wanang_PC$par_morph))
-
-Yapsiei_PC <- testik %>% 
-  filter(LOC2 =="Yapsiei") %>%
-  select(cat_morph, par_morph)
-Yapsiei_PC <- as.matrix(table(Yapsiei_PC$cat_morph, Yapsiei_PC$par_morph))
 
 ################################# run the analyses
 
-FW_PC_res <-betalinkr_multi(webs2array(Elem_PC,Morox_PC,Niksek_PC,Ohu1_PC,Ohu2_PC,Utai_PC, Wamangu_PC, Wanang_PC, Yapsiei_PC), partitioning="commondenom", partition.st=TRUE)
-FW_PC_res<-FW_PC_res %>% add_column(dataset = "Cat_Par")   # adding colums for excel comparison
+FW_PC_res <-
+  bipartite::betalinkr_multi(
+    bipartite::webs2array(loc_list),
+    partitioning = "commondenom",
+    partition.st = TRUE
+  ) %>%
+  tibble::add_column(dataset = "Cat_Par") # adding colums for excel comparison
 
 
 ######### Prepare tables for Mantle test
 
-#function, which prepare the matrix suitable for the Mantle test
+# function, which prepare the matrix suitable for the Mantle test
 
-# FW_S_all_parasitoids
-xmnames<-unique(c(FW_PC_res$i,FW_PC_res$j))
-xm <- matrix( rep(0,81),nrow=9,ncol=9)
-colnames(xm) <- xmnames; rownames(xm) <- xmnames
-xm[lower.tri(xm,diag=F)] <-FW_PC_res$S
-xm[upper.tri(xm,diag=F)] <-FW_PC_res$S
-FW_S_CP<-xm
+make_a_matrix <- function(data_source,
+                          var_name) {
+  xmnames <- unique(c(data_source$i, data_source$j))
+  xmnames_length <- length(xmnames)
+  xm <- matrix(0, nrow = xmnames_length, ncol = xmnames_length)
 
-# FW_OS_all_parasitoids
-xmnames<-unique(c(FW_PC_res$i,FW_PC_res$j))
-xm <- matrix( rep(0,81),nrow=9,ncol=9)
-colnames(xm) <- xmnames; rownames(xm) <- xmnames
-xm[lower.tri(xm,diag=F)] <-FW_PC_res$OS
-xm[upper.tri(xm,diag=F)] <-FW_PC_res$OS
-FW_OS_CP<-xm
+  colnames(xm) <- xmnames
+  rownames(xm) <- xmnames
 
+  xm[lower.tri(xm, diag = FALSE)] <- purrr::pluck(FW_PC_res, var_name)
 
+  xm[upper.tri(xm, diag = FALSE)] <- purrr::pluck(FW_PC_res, var_name)
 
-# FW_ST.lh_all_parasitoids
+  return(xm)
+}
 
-xmnames<-unique(c(FW_PC_res$i,FW_PC_res$j))
-xm <- matrix( rep(0,81),nrow=9,ncol=9)
-colnames(xm) <- xmnames; rownames(xm) <- xmnames
-xm[lower.tri(xm,diag=F)] <-FW_PC_res$ST.lh
-xm[upper.tri(xm,diag=F)] <-FW_PC_res$ST.lh
-FW_ST.lh_CP<-xm
+make_a_matrix(
+  data_source = FW_PC_res,
+  var_name = "S"
+)
 
-# FW_WN_all_parasitoids
+data_for_mantel <-
+  FW_PC_res %>%
+  dplyr::select(-c(i, j, dataset)) %>%
+  names() %>%
+  rlang::set_names() %>%
+  purrr::map(
+    .f = ~ make_a_matrix(
+      data_source = FW_PC_res,
+      var_name = .x
+    )
+  )
 
-xmnames<-unique(c(FW_PC_res$i,FW_PC_res$j))
-xm <- matrix( rep(0,81),nrow=9,ncol=9)
-colnames(xm) <- xmnames; rownames(xm) <- xmnames
-xm[lower.tri(xm,diag=F)] <-FW_PC_res$WN
-xm[upper.tri(xm,diag=F)] <-FW_PC_res$WN
-FW_WN_CP<-xm
+str(data_for_mantel, 2)
 
-# FW_ST_all_parasitoids
+result_mantel <-
+  purrr::map(
+    .x = data_for_mantel,
+    .f = ~ vegan::mantel(
+      xdis = .x,
+      ydis = Distance,
+      method = "spear"
+    )
+  )
 
-xmnames<-unique(c(FW_PC_res$i,FW_PC_res$j))
-xm <- matrix( rep(0,81),nrow=9,ncol=9)
-colnames(xm) <- xmnames; rownames(xm) <- xmnames
-xm[lower.tri(xm,diag=F)] <-FW_PC_res$ST
-xm[upper.tri(xm,diag=F)] <-FW_PC_res$ST
-FW_ST_CP<-xm
+str(result_mantel, 2)
 
-# FW_ST.l_all_parasitoids
+result_table <-
+  tibble::tibble(
+    names(result_mantel)
+  ) %>%
+  dplyr::mutate(
+    mantel_stat = purrr::map_dbl(
+      .x = result_mantel,
+      .f = ~ .x$statistic
+    ),
+    p_value = purrr::map_dbl(
+      .x = result_mantel,
+      .f = ~ .x$signif
+    ),
+  )
 
-xmnames<-unique(c(FW_PC_res$i,FW_PC_res$j))
-xm <- matrix( rep(0,81),nrow=9,ncol=9)
-colnames(xm) <- xmnames; rownames(xm) <- xmnames
-xm[lower.tri(xm,diag=F)] <-FW_PC_res$ST.l
-xm[upper.tri(xm,diag=F)] <-FW_PC_res$ST.l
-FW_ST.l_CP<-xm
-
-# FW_ST.h_all_parasitoids
-
-xmnames<-unique(c(FW_PC_res$i,FW_PC_res$j))
-xm <- matrix( rep(0,81),nrow=9,ncol=9)
-colnames(xm) <- xmnames; rownames(xm) <- xmnames
-xm[lower.tri(xm,diag=F)] <-FW_PC_res$ST.h
-xm[upper.tri(xm,diag=F)] <-FW_PC_res$ST.h
-FW_ST.h_CP<-xm
-
-#FW_ST.lh_all_parasitoids
-
-xmnames<-unique(c(FW_PC_res$i,FW_PC_res$j))
-xm <- matrix( rep(0,81),nrow=9,ncol=9)
-colnames(xm) <- xmnames; rownames(xm) <- xmnames
-xm[lower.tri(xm,diag=F)] <-FW_PC_res$ST.lh
-xm[upper.tri(xm,diag=F)] <-FW_PC_res$ST.lh
-FW_ST.lh_CP<-xm
-
-sink("data/output/results.txt", append = T)
-#Mantel test
-FW_S_CP_mantel <-  mantel(FW_S_CP, Distance , method="spear")
-FW_OS_CP_mantel <- mantel(FW_OS_CP, Distance , method="spear")
-FW_WN_CP_mantel <- mantel(FW_WN_CP, Distance , method="spear")
-FW_ST_CP_mantel <- mantel(FW_ST_CP, Distance , method="spear")
-FW_ST.l_CP_mantel <- mantel(FW_ST.l_CP, Distance , method="spear")
-FW_ST.h_CP_mantel <- mantel(FW_ST.h_CP, Distance , method="spear")
-FW_ST.lh_CP_mantel <- mantel(FW_ST.lh_CP, Distance , method="spear")
-
-FW_S_CP_mantel
-FW_OS_CP_mantel
-FW_WN_CP_mantel
-FW_ST_CP_mantel
-FW_ST.l_CP_mantel
-FW_ST.h_CP_mantel
-FW_ST.lh_CP_mantel
-sink()
-
-
+readr::write_csv(
+  result_table,
+  here::here("data/output/mantel_result.csv")
+)
