@@ -1,0 +1,135 @@
+
+Mantel statistic based on Spearman's rank correlation rho 
+
+Call:
+mantel(xdis = FW_S_CP, ydis = Distance, method = "spear") 
+
+Mantel statistic r: 0.3568 
+      Significance: 0.046 
+
+Upper quantiles of permutations (null model):
+  90%   95% 97.5%   99% 
+0.228 0.347 0.419 0.479 
+Permutation: free
+Number of permutations: 999
+
+
+Mantel statistic based on Spearman's rank correlation rho 
+
+Call:
+mantel(xdis = FW_S_CP, ydis = Distance, method = "spear") 
+
+Mantel statistic r: 0.3568 
+      Significance: 0.046 
+
+Upper quantiles of permutations (null model):
+  90%   95% 97.5%   99% 
+0.228 0.347 0.419 0.479 
+Permutation: free
+Number of permutations: 999
+
+
+Mantel statistic based on Spearman's rank correlation rho 
+
+Call:
+mantel(xdis = FW_S_CP, ydis = Distance, method = "spear") 
+
+Mantel statistic r: 0.3568 
+      Significance: 0.046 
+
+Upper quantiles of permutations (null model):
+  90%   95% 97.5%   99% 
+0.228 0.347 0.419 0.479 
+Permutation: free
+Number of permutations: 999
+
+
+Mantel statistic based on Spearman's rank correlation rho 
+
+Call:
+mantel(xdis = FW_OS_CP, ydis = Distance, method = "spear") 
+
+Mantel statistic r: -0.2229 
+      Significance: 0.912 
+
+Upper quantiles of permutations (null model):
+  90%   95% 97.5%   99% 
+0.207 0.259 0.316 0.352 
+Permutation: free
+Number of permutations: 999
+
+
+Mantel statistic based on Spearman's rank correlation rho 
+
+Call:
+mantel(xdis = FW_WN_CP, ydis = Distance, method = "spear") 
+
+Mantel statistic r: 0.4426 
+      Significance: 0.017 
+
+Upper quantiles of permutations (null model):
+  90%   95% 97.5%   99% 
+0.233 0.317 0.414 0.474 
+Permutation: free
+Number of permutations: 999
+
+
+Mantel statistic based on Spearman's rank correlation rho 
+
+Call:
+mantel(xdis = FW_ST_CP, ydis = Distance, method = "spear") 
+
+Mantel statistic r: 0.3753 
+      Significance: 0.037 
+
+Upper quantiles of permutations (null model):
+  90%   95% 97.5%   99% 
+0.215 0.301 0.427 0.511 
+Permutation: free
+Number of permutations: 999
+
+
+Mantel statistic based on Spearman's rank correlation rho 
+
+Call:
+mantel(xdis = FW_ST.l_CP, ydis = Distance, method = "spear") 
+
+Mantel statistic r: -0.1403 
+      Significance: 0.787 
+
+Upper quantiles of permutations (null model):
+  90%   95% 97.5%   99% 
+0.215 0.261 0.315 0.384 
+Permutation: free
+Number of permutations: 999
+
+
+Mantel statistic based on Spearman's rank correlation rho 
+
+Call:
+mantel(xdis = FW_ST.h_CP, ydis = Distance, method = "spear") 
+
+Mantel statistic r: 0.5704 
+      Significance: 0.008 
+
+Upper quantiles of permutations (null model):
+  90%   95% 97.5%   99% 
+0.222 0.352 0.455 0.548 
+Permutation: free
+Number of permutations: 999
+
+
+Mantel statistic based on Spearman's rank correlation rho 
+
+Call:
+mantel(xdis = FW_ST.lh_CP, ydis = Distance, method = "spear") 
+
+Mantel statistic r: 0.244 
+      Significance: 0.104 
+
+Upper quantiles of permutations (null model):
+  90%   95% 97.5%   99% 
+0.251 0.332 0.391 0.466 
+Permutation: free
+Number of permutations: 999
+
